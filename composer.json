@@ -1,0 +1,24 @@
+{
+    "name": "mikalai_kabzar/codeception_test_framework_for_yandex",
+    "description": "Codeception framework for Yandex just for fun",
+	"keywords" : [
+		"Report",
+		"Reporting",
+		"Report Portal",
+		"Codeception"
+	],
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mikalai Kabzar",
+            "email": "Mikalai_Kabzar@epam.com"
+        }
+    ],
+
+    "require-dev": {
+	    "reportportal/basic" : "dev-master",
+        "codeception/codeception": "^2.3",
+        "codeception/base": "^2.3"
+    }
+}
