@@ -12,3 +12,4 @@ modules:
              window_size: false # disabled in ChromeDriver
              port: 4444
              browser: chrome
+          - \Helper\Acceptance

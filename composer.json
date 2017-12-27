@@ -20,5 +20,11 @@
 	    "reportportal/basic" : "dev-master",
         "codeception/codeception": "^2.3",
         "codeception/base": "^2.3"
+    },
+
+    "autoload-dev" : {
+      "classmap" : [
+        "TestFramework/"
+      ]
     }
 }
