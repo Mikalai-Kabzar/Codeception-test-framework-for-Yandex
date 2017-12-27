@@ -1,13 +1,14 @@
 <?php
 
 use Pages\MainPage as MainPage;
- 
+
 $I = new YandexTester($scenario);
-$I->wantTo('perform actions and see result');
+$I->wantTo('Check existence of basic web-element on main page of Yandex.');
 $I->amOnPage('/');
-$I->canSee('Картинки');
-$I->canSee('Картинки1');
-
-
-
-
+$I->seeElement(MainPage::IMAGES_XPATH);
+$I->seeElement(MainPage::MAPS_XPATH);
+$I->seeElement(MainPage::MARKET_XPATH);
+$I->seeElement(MainPage::MUSIC_XPATH);
+$I->seeElement(MainPage::TRANSLATE_XPATH);
+$I->seeElement(MainPage::VIDEO_XPATH);
+$I->seeElement(MainPage::NEWS_XPATH);
