@@ -30,6 +30,11 @@ class MainPageNavigationButtonsExistCest {
         $I->seeElement(MainPage::MUSIC_XPATH);
     }
 
+    function checkSomeWrongWebElementExists(YandexTester $I)
+    {
+        $I->seeElement('.//a/a/a/a[@class = "some wrong web element"]');
+    }
+
     function checkTranslateExists(YandexTester $I)
     {
         $I->seeElement(MainPage::TRANSLATE_XPATH);
