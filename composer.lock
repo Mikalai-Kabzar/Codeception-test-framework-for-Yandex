@@ -1356,12 +1356,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Mikalai-Kabzar/client-php.git",
-                "reference": "42147814e2e27d4815167bf78ba996e039ec40ac"
+                "reference": "c7a9ea28b5cf368a95f52c7386518ed3235ada28"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Mikalai-Kabzar/client-php/zipball/42147814e2e27d4815167bf78ba996e039ec40ac",
-                "reference": "42147814e2e27d4815167bf78ba996e039ec40ac",
+                "url": "https://api.github.com/repos/Mikalai-Kabzar/client-php/zipball/c7a9ea28b5cf368a95f52c7386518ed3235ada28",
+                "reference": "c7a9ea28b5cf368a95f52c7386518ed3235ada28",
                 "shasum": ""
             },
             "require": {
@@ -1393,7 +1393,7 @@
                 "report",
                 "reporting"
             ],
-            "time": "2017-12-26T13:59:03+00:00"
+            "time": "2017-12-29T08:49:28+00:00"
         },
         {
             "name": "sebastian/code-unit-reverse-lookup",

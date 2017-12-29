@@ -2,17 +2,17 @@
 
 class CalculationUnitTestsShortCest
 {
-    function checkEqualPositive1(UnitTester $I)
+    function checkEqualPositive123(UnitTester $I)
     {
         $I->assertEquals('1', '1');
     }
 
-    function checkEqualPositive2(UnitTester $I)
+    function checkEqualPositive234(UnitTester $I)
     {
         $I->assertEquals('1', '1');
     }
 
-    function checkEqualNegative1(UnitTester $I)
+    function checkEqualNegative123456(UnitTester $I)
     {
         $I->assertEquals('1', '2', 'It is a negative test for string.');
     }

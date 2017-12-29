@@ -15,4 +15,6 @@ extensions:
             UUID: 07104d6b-45a0-442f-b7ed-a79fa504a073
             host: https://rp.epam.com
             projectName: mikalai_kabzar_personal
-            timeZone: .000+02:00
+            timeZone: .000+00:00
+            launchName: test launch name YEAH BABY !!!
+            launchDescription: test launch description YEAH BABY TWICE!!!

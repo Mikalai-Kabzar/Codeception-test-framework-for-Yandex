@@ -42,7 +42,7 @@ class CalculationUnitTestsCest
     /**
      * @return array
      */
-    public function providerAdd1()
+    private function providerAdd1()
     {
         return array(
             ['expected' => 1, 'actual' => 2],
@@ -51,7 +51,7 @@ class CalculationUnitTestsCest
         );
     }
 
-    public function providerAdd2()
+    private function providerAdd2()
     {
         return array(
             [1, 2],
