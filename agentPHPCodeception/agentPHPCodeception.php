@@ -3,6 +3,7 @@
 
 use ReportPortalBasic\Enum\ItemStatusesEnum as ItemStatusesEnum;
 use ReportPortalBasic\Enum\ItemTypesEnum as ItemTypesEnum;
+use ReportPortalBasic\Enum\LogLevelsEnum as LogLevelsEnum;
 use ReportPortalBasic\Service\ReportPortalHTTPService;
 use GuzzleHttp\Psr7\Response as Response;
 
@@ -40,19 +41,19 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     public static $events = array(
         Events::SUITE_BEFORE => 'beforeSuite',
         Events::TEST_START => 'beforeTestExecution',
-        'test.before' => 'beforeTest',
-        'step.before' => 'beforeStep',
+        Events::TEST_BEFORE => 'beforeTest',
+        Events::STEP_BEFORE => 'beforeStep',
         'step.fail' => 'afterStepFail',
-        'step.after' => 'afterStep',
-        'test.after' => 'afterTest',
-        'test.end' => 'afterTestExecution',
-        'test.fail' => 'afterTestFail',
-        'test.error' => 'afterTestError',
-        'test.incomplete' => 'afterTestIncomplete',
-        'test.skipped' => 'afterTestSkipped',
-        'test.success' => 'afterTestSuccess',
-        'test.fail.print' => 'afterTestFailAdditional',
-        'result.print.after' => 'afterTesting',
+        Events::STEP_AFTER => 'afterStep',
+        Events::TEST_AFTER => 'afterTest',
+        Events::TEST_END => 'afterTestExecution',
+        Events::TEST_FAIL => 'afterTestFail',
+        Events::TEST_ERROR => 'afterTestError',
+        Events::TEST_INCOMPLETE => 'afterTestIncomplete',
+        Events::TEST_SKIPPED => 'afterTestSkipped',
+        Events::TEST_SUCCESS => 'afterTestSuccess',
+        Events::TEST_FAIL_PRINT => 'afterTestFailAdditional',
+        Events::RESULT_PRINT_AFTER => 'afterTesting',
         Events::SUITE_AFTER => 'afterSuite'
     );
 
@@ -82,7 +83,8 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
             self::$httpService->launchTestRun($this->launchName, $this->launchDescription, ReportPortalHTTPService::DEFAULT_LAUNCH_MODE, []);
             $this->firstSuite = true;
         }
-        $response = self::$httpService->createRootItem($e->getSuite()->getBaseName(), 'root item description', []);
+        $suiteBaseName = $e->getSuite()->getBaseName();
+        $response = self::$httpService->createRootItem($suiteBaseName, $suiteBaseName.' tests', []);
         $this->rootItemID = self::getID($response);
 
     }
@@ -151,17 +153,29 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     public function beforeStep(StepEvent $e)
     {
-        $stepName = $e->getStep()->getAction() . '(' . $e->getStep()->getArgumentsAsString() . ')';
-        $response = self::$httpService->startChildItem($this->testItemID, 'Description of step ' . $stepName, $stepName, ItemTypesEnum::STEP, []);
+        $argumentsAsString = $e->getStep()->getArgumentsAsString();
+        echo $argumentsAsString;
+        $actionName = $e->getStep()->getAction();
+        if (empty($argumentsAsString)){
+            $stepName = $actionName;    
+        } else {
+            $stepName = $actionName.'('.$argumentsAsString.')'; 
+        }
+        $response = self::$httpService->startChildItem($this->testItemID, $argumentsAsString, $stepName, ItemTypesEnum::STEP, []);
         $this->stepItemID = self::getID($response);
 
     }
 
     public function afterStep(StepEvent $e)
     {
+        $argumentsAsString = $e->getStep()->getArgumentsAsString();
         $stepStatus = $e->getStep()->toString(200);
-        $status = self::getStatusByBool($e->getStep()->hasFailed());
-        self::$httpService->finishItem($this->stepItemID, $status, 'Description of step ' . $stepStatus);
+        $isFailedStep = $e->getStep()->hasFailed();
+        if ($isFailedStep){
+            self::$httpService->addLogMessage($this->stepItemID,'error '.$argumentsAsString,LogLevelsEnum::ERROR);
+        }
+        $status = self::getStatusByBool($isFailedStep); 
+        self::$httpService->finishItem($this->stepItemID, $status, $argumentsAsString);
     }
 
     public function afterStepFail(FailEvent $e)

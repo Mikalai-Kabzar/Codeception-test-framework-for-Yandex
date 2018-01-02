@@ -2,6 +2,12 @@
 use \Codeception\Example as Example;
 class CalculationUnitTestsCest
 {
+
+    function _before(UnitTester $I){
+        $I->amGoingTo('Break the system');
+        $I->comment('Some before comment');
+    }
+
     function checkEqualPositive1(UnitTester $I)
     {
         $I->assertEquals('1', '1');
@@ -22,8 +28,6 @@ class CalculationUnitTestsCest
      */
     function checkEqualNegative2(UnitTester $I, Example $example)
     {
-        $I->amGoingTo('Break the system');
-        $I->comment('Some comment');
         $I->assertEquals($example['expected'], $example['actual'], 'It is a negative test for numbers.');
     }
 
@@ -34,8 +38,6 @@ class CalculationUnitTestsCest
      */
     function checkEqualNegative3(UnitTester $I, Example $example)
     {
-        $I->amGoingTo('Break the system');
-        $I->comment('Some comment');
         $I->assertEquals($example[0], $example[1], 'It is a negative test for numbers.');
     }
 

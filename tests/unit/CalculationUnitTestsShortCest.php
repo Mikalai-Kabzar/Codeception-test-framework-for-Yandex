@@ -2,6 +2,12 @@
 
 class CalculationUnitTestsShortCest
 {
+
+    function _before(UnitTester $I){
+        $I->amGoingTo('Break the system');
+        $I->comment('Some before comment');
+    }
+    
     function checkEqualPositive123(UnitTester $I)
     {
         $I->assertEquals('1', '1');
