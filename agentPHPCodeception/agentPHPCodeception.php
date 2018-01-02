@@ -103,7 +103,6 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     {
         $testName = $e->getTest()->getMetadata()->getName();
         $testParam = implode($e->getTest()->getMetadata()->getDependencies());
-
         $this->testName = $testName . '_' . $testParam;
         $this->testDescription = 'Description of ' . $this->testName;
         $response = self::$httpService->startChildItem($this->rootItemID, 'Description of ' . $this->testName, $this->testName, ItemTypesEnum::TEST, []);
@@ -123,6 +122,7 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     public function afterTestFail(FailEvent $e)
     {
         $this->setFailedLaunch();
+
         self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::FAILED, $this->testDescription);
     }
 
@@ -168,20 +168,25 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     public function afterStep(StepEvent $e)
     {
+        $stringLimit = 20000;
         $argumentsAsString = $e->getStep()->getArgumentsAsString();
-        $stepStatus = $e->getStep()->toString(200);
+        $logDir = str_replace(['/','\\'],DIRECTORY_SEPARATOR,$this->getLogDir());
+
+        $stepToString = $e->getStep()->toString($stringLimit);
         $isFailedStep = $e->getStep()->hasFailed();
         if ($isFailedStep){
-            self::$httpService->addLogMessage($this->stepItemID,'error '.$argumentsAsString,LogLevelsEnum::ERROR);
+            self::$httpService->addLogMessage($this->stepItemID,$stepToString,LogLevelsEnum::ERROR);
+            self::$httpService->addLogMessage($this->stepItemID,$this->getLogDir(),LogLevelsEnum::TRACE);
+            self::$httpService->addLogMessage($this->stepItemID,$logDir,LogLevelsEnum::TRACE);
         }
         $status = self::getStatusByBool($isFailedStep); 
         self::$httpService->finishItem($this->stepItemID, $status, $argumentsAsString);
     }
 
-    public function afterStepFail(FailEvent $e)
+      public function afterStepFail(FailEvent $e)
     {
 
-    }
+     }
 
     public function afterTesting(PrintResultEvent $e){
         $status = self::getStatusByBool($this->isFailedLaunch);
