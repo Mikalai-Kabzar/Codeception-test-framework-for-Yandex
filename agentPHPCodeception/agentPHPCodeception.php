@@ -18,7 +18,10 @@ use \Codeception\Event\PrintResultEvent as PrintResultEvent;
 class agentPHPCodeception extends \Codeception\Platform\Extension
 {
 
-    const stringLimit = 20000;
+    const STRING_LIMIT = 20000;
+    const COMMENT = '$this->getScenario()->comment($description);';
+
+    private $isCommentStep = false;
     private $firstSuite = false;
     private $UUID;
     private $projectName;
@@ -168,34 +171,20 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     public function beforeStep(StepEvent $e)
     {
-
         $pairs = explode(':', $e->getStep()->getLine());
         $fileAddress = $pairs[0];
         $lineNumber = $pairs[1];
         $fileLines = file($fileAddress);
         $stepName = $fileLines[$lineNumber - 1];
-        $action = $e->getStep()->getAction();
-        $stepAsString = $e->getStep()->toString(self::stringLimit);
-        if ($action = $stepAsString) {
-
+        $stepAsString = $e->getStep()->toString(self::STRING_LIMIT);
+        if (strpos($stepName, self::COMMENT) !== false) {
             $stepName = $stepAsString;
-        }
-
-        //$argumentsAsString = $e->getStep()->getArgumentsAsString();
-        $argumentsAsString = $e->getStep()->getHumanizedArguments();
-        //echo $argumentsAsString;
-        $actionName = $e->getStep()->getAction();
-        $actionName = $e->getStep()->getHumanizedActionWithoutArguments();
-
-        if (empty($argumentsAsString)) {
-            $description = $actionName;
+            $this->isCommentStep = true;
         } else {
-            $description = $actionName . '(' . $argumentsAsString . ')';
+            $this->isCommentStep = false;
         }
-       //$description = $e->getStep()->getLine();
-        $response = self::$httpService->startChildItem($this->testItemID, $description, $stepName, ItemTypesEnum::STEP, []);
+        $response = self::$httpService->startChildItem($this->testItemID, '', $stepName, ItemTypesEnum::STEP, []);
         $this->stepItemID = self::getID($response);
-
     }
 
     public function afterStep(StepEvent $e)
@@ -203,14 +192,12 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         $argumentsAsString = $e->getStep()->getArgumentsAsString();
         $logDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $this->getLogDir());
 
-        $stepToString = $e->getStep()->toString(self::stringLimit);
+        $stepToString = $e->getStep()->toString(self::STRING_LIMIT);
         $isFailedStep = $e->getStep()->hasFailed();
 
 
         if ($isFailedStep) {
             self::$httpService->addLogMessage($this->stepItemID, $stepToString, LogLevelsEnum::ERROR);
-
-
             try {
                 $this->getModule('WebDriver')->_saveScreenshot(codecept_output_dir() . 'screenshot_1-123.png');
                 $screenshotBinary = $this->getModule('WebDriver')->webDriver->takeScreenshot();
@@ -224,19 +211,11 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
 
         $status = self::getStatusByBool($isFailedStep);
-
-
-        $action = $e->getStep()->getAction();
-        $stepAsString = $e->getStep()->toString(self::stringLimit);
-        if ($action = $stepAsString) {
-            $description = '';
+        if ($this->isCommentStep) {
+            $description = 'comment';
         } else {
-            $description = $e->getStep()->toString(self::stringLimit);
+            $description = $e->getStep()->toString(self::STRING_LIMIT);
         }
-
-
-
-
         self::$httpService->finishItem($this->stepItemID, $status, $description);
     }
 
