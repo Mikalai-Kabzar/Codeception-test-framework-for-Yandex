@@ -35,6 +35,11 @@ class MainPageNavigationButtonsExistCest {
         $I->seeElement('.//a/a/a/a[@class = "some wrong web element"]');
     }
 
+    function checkSomeWrongWebElementExists2(YandexTester $I)
+    {
+        $I->seeElement('.//a/a/a/a[@class = "some wrong web element2"]');
+    }
+
     function checkTranslateExists(YandexTester $I)
     {
         $I->seeElement(MainPage::TRANSLATE_XPATH);

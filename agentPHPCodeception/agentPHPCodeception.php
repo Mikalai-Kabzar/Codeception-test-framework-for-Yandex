@@ -1,6 +1,7 @@
 <?php
 
 
+use Codeception\Exception\ModuleRequireException as ModuleRequireException;
 use ReportPortalBasic\Enum\ItemStatusesEnum as ItemStatusesEnum;
 use ReportPortalBasic\Enum\ItemTypesEnum as ItemTypesEnum;
 use ReportPortalBasic\Enum\LogLevelsEnum as LogLevelsEnum;
@@ -16,6 +17,8 @@ use \Codeception\Event\PrintResultEvent as PrintResultEvent;
 
 class agentPHPCodeception extends \Codeception\Platform\Extension
 {
+
+    const stringLimit = 20000;
     private $firstSuite = false;
     private $UUID;
     private $projectName;
@@ -84,7 +87,7 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
             $this->firstSuite = true;
         }
         $suiteBaseName = $e->getSuite()->getBaseName();
-        $response = self::$httpService->createRootItem($suiteBaseName, $suiteBaseName.' tests', []);
+        $response = self::$httpService->createRootItem($suiteBaseName, $suiteBaseName . ' tests', []);
         $this->rootItemID = self::getID($response);
 
     }
@@ -102,10 +105,22 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     public function beforeTest(TestEvent $e)
     {
         $testName = $e->getTest()->getMetadata()->getName();
-        $testParam = implode($e->getTest()->getMetadata()->getDependencies());
-        $this->testName = $testName . '_' . $testParam;
-        $this->testDescription = 'Description of ' . $this->testName;
-        $response = self::$httpService->startChildItem($this->rootItemID, 'Description of ' . $this->testName, $this->testName, ItemTypesEnum::TEST, []);
+        $exampleParamsString = '';
+        try {
+            $exampleParams = $e->getTest()->getMetadata()->getCurrent()['example'];
+            foreach ($exampleParams as $key => $value) {
+                $exampleParamsString = $exampleParamsString.$value.'; ';
+            }
+            if (!empty($exampleParamsString)) {
+                $exampleParamsString = substr($exampleParamsString, 0, -2);
+                $exampleParamsString = ' ('.$exampleParamsString.')';
+            }
+        } catch (Exception $exception) {
+        }
+
+        $this->testName = $testName .$exampleParamsString;
+        $this->testDescription = $exampleParamsString;
+        $response = self::$httpService->startChildItem($this->rootItemID, $this->testDescription, $this->testName, ItemTypesEnum::TEST, []);
         $this->testItemID = self::getID($response);
     }
 
@@ -153,42 +168,85 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     public function beforeStep(StepEvent $e)
     {
-        $argumentsAsString = $e->getStep()->getArgumentsAsString();
-        echo $argumentsAsString;
-        $actionName = $e->getStep()->getAction();
-        if (empty($argumentsAsString)){
-            $stepName = $actionName;    
-        } else {
-            $stepName = $actionName.'('.$argumentsAsString.')'; 
+
+        $pairs = explode(':', $e->getStep()->getLine());
+        $fileAddress = $pairs[0];
+        $lineNumber = $pairs[1];
+        $fileLines = file($fileAddress);
+        $stepName = $fileLines[$lineNumber - 1];
+        $action = $e->getStep()->getAction();
+        $stepAsString = $e->getStep()->toString(self::stringLimit);
+        if ($action = $stepAsString) {
+
+            $stepName = $stepAsString;
         }
-        $response = self::$httpService->startChildItem($this->testItemID, $argumentsAsString, $stepName, ItemTypesEnum::STEP, []);
+
+        //$argumentsAsString = $e->getStep()->getArgumentsAsString();
+        $argumentsAsString = $e->getStep()->getHumanizedArguments();
+        //echo $argumentsAsString;
+        $actionName = $e->getStep()->getAction();
+        $actionName = $e->getStep()->getHumanizedActionWithoutArguments();
+
+        if (empty($argumentsAsString)) {
+            $description = $actionName;
+        } else {
+            $description = $actionName . '(' . $argumentsAsString . ')';
+        }
+       //$description = $e->getStep()->getLine();
+        $response = self::$httpService->startChildItem($this->testItemID, $description, $stepName, ItemTypesEnum::STEP, []);
         $this->stepItemID = self::getID($response);
 
     }
 
     public function afterStep(StepEvent $e)
     {
-        $stringLimit = 20000;
         $argumentsAsString = $e->getStep()->getArgumentsAsString();
-        $logDir = str_replace(['/','\\'],DIRECTORY_SEPARATOR,$this->getLogDir());
+        $logDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $this->getLogDir());
 
-        $stepToString = $e->getStep()->toString($stringLimit);
+        $stepToString = $e->getStep()->toString(self::stringLimit);
         $isFailedStep = $e->getStep()->hasFailed();
-        if ($isFailedStep){
-            self::$httpService->addLogMessage($this->stepItemID,$stepToString,LogLevelsEnum::ERROR);
-            self::$httpService->addLogMessage($this->stepItemID,$this->getLogDir(),LogLevelsEnum::TRACE);
-            self::$httpService->addLogMessage($this->stepItemID,$logDir,LogLevelsEnum::TRACE);
+
+
+        if ($isFailedStep) {
+            self::$httpService->addLogMessage($this->stepItemID, $stepToString, LogLevelsEnum::ERROR);
+
+
+            try {
+                $this->getModule('WebDriver')->_saveScreenshot(codecept_output_dir() . 'screenshot_1-123.png');
+                $screenshotBinary = $this->getModule('WebDriver')->webDriver->takeScreenshot();
+                //var_dump($screenshotBinary);
+                //self::$httpService->addLogMessage($this->stepItemID, '_'.$screenshotBinary.'_', LogLevelsEnum::ERROR);
+                //self::$httpService->addLogMessageWithPicture($this->stepItemID,$stepToString,LogLevelsEnum::ERROR,$screenshotBinary,'bmp');
+              } catch (ModuleRequireException $error) {
+            }
+            //self::$httpService->addLogMessageWithPicture($this->stepItemID,$stepToString,LogLevelsEnum::ERROR,,'bmp');
         }
-        $status = self::getStatusByBool($isFailedStep); 
-        self::$httpService->finishItem($this->stepItemID, $status, $argumentsAsString);
+
+
+        $status = self::getStatusByBool($isFailedStep);
+
+
+        $action = $e->getStep()->getAction();
+        $stepAsString = $e->getStep()->toString(self::stringLimit);
+        if ($action = $stepAsString) {
+            $description = '';
+        } else {
+            $description = $e->getStep()->toString(self::stringLimit);
+        }
+
+
+
+
+        self::$httpService->finishItem($this->stepItemID, $status, $description);
     }
 
-      public function afterStepFail(FailEvent $e)
+    public function afterStepFail(FailEvent $e)
     {
 
-     }
+    }
 
-    public function afterTesting(PrintResultEvent $e){
+    public function afterTesting(PrintResultEvent $e)
+    {
         $status = self::getStatusByBool($this->isFailedLaunch);
         self::$httpService->finishTestRun($status);
     }

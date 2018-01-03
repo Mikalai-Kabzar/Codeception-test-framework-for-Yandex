@@ -5,38 +5,38 @@ class CalculationUnitTestsCest
 
     function _before(UnitTester $I){
         $I->amGoingTo('Break the system');
-        $I->comment('Some before comment');
+        $I->comment('Super puper mega before comment');
     }
 
-    function checkEqualPositive1(UnitTester $I)
+    function checkEqualPositive1EqualTo1(UnitTester $I)
+    {
+        $I->assertEquals('1', '1','test on 1 equal to 1');
+    }
+
+    function checkEqualPositive1EqualTo1SecondTest(UnitTester $I)
     {
         $I->assertEquals('1', '1');
     }
 
-    function checkEqualPositive2(UnitTester $I)
-    {
-        $I->assertEquals('1', '1');
-    }
-
-    function checkEqualNegative1(UnitTester $I)
+    function checkEqualNegative1EqualTo2(UnitTester $I)
     {
         $I->assertEquals('1', '2', 'It is a negative test for string.');
     }
 
     /**
-     * @dataProvider providerAdd1
+     * @dataProvider dataProviderFullArray
      */
-    function checkEqualNegative2(UnitTester $I, Example $example)
+    function checkEqualNegativeTestWithDataProvider(UnitTester $I, Example $example)
     {
         $I->assertEquals($example['expected'], $example['actual'], 'It is a negative test for numbers.');
     }
 
     /**
-     * @dataProvider providerAdd2
+     * @dataProvider dataProviderLightArray
      * @param UnitTester $I
      * @param \Codeception\Example $example
      */
-    function checkEqualNegative3(UnitTester $I, Example $example)
+    function checkEqualNegativeWIthDataProviderAndExamples(UnitTester $I, Example $example)
     {
         $I->assertEquals($example[0], $example[1], 'It is a negative test for numbers.');
     }
@@ -44,7 +44,7 @@ class CalculationUnitTestsCest
     /**
      * @return array
      */
-    private function providerAdd1()
+    private function dataProviderFullArray()
     {
         return array(
             ['expected' => 1, 'actual' => 2],
@@ -53,7 +53,7 @@ class CalculationUnitTestsCest
         );
     }
 
-    private function providerAdd2()
+    private function dataProviderLightArray()
     {
         return array(
             [1, 2],
