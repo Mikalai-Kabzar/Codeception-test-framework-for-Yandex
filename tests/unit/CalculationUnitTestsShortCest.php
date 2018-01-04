@@ -11,54 +11,52 @@ class CalculationUnitTestsShortCest
 
     function checkEqualPositive123(UnitTester $I)
     {
-        $I->assertEquals('1', '1');
+        $I->assertEquals('16', '16');
     }
 
     function checkEqualPositive234(UnitTester $I)
     {
-        $I->assertEquals('1', '1');
+        $I->assertEquals('51', '51');
     }
 
     /**
      * @param UnitTester $I
-     * @depends checkEqualPositive234
+
      */
     function checkEqualNegative1(UnitTester $I)
     {
         //$I->assertEquals('1', '1');
-        $I->assertEquals('2', '2');
+        $I->assertEquals('24', '24');
     }
 
     /**
-     * @param UnitTester $I 
+     * @param UnitTester $I
      * @depends checkEqualPositive234
      */
     function checkEqualNegative2(UnitTester $I)
     {
-        $I->assertEquals('1', '1');
-        $I->assertEquals('2', '2');
+        $I->assertEquals('13', '13');
+        $I->assertEquals('23', '23');
 
     }
 
     /**
-     * @param UnitTester $I
-     * @depends checkEqualPositive1
      */
     function checkEqualNegative3(UnitTester $I)
     {
-        $I->assertEquals('3', '3');
-        $I->assertEquals(4, 4);
-        $I->assertEquals(4, 5);
+        $I->assertEquals('32', '32');
+        $I->assertEquals(42, 42);
+        $I->assertEquals(52, 2);
     }
 
     /**
+     * @depends checkEqualNegative3
      * @param UnitTester $I
-     * @depends checkEqualPositive3
      */
     function checkEqualNegative4(UnitTester $I)
     {
-        $I->assertEquals('1', '1');
-        $I->assertEquals(4, 4);
+        $I->assertEquals('11', '11');
+        $I->assertEquals(41, 41);
     }
 
 }

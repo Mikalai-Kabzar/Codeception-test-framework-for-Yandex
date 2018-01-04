@@ -156,9 +156,10 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     public function afterTestFail(FailEvent $e)
     {
         $this->setFailedLaunch();
-
-        //var_dump($e->getFail()->getTraceAsString());
-        //var_dump($e->getFail()->getMessage());
+        $trace = $e->getFail()->getTraceAsString();
+        $message = $e->getFail()->getMessage();
+        self::$httpService->addLogMessage($this->failedStepItemID, $message, LogLevelsEnum::ERROR);
+        self::$httpService->addLogMessage($this->failedStepItemID, $trace, LogLevelsEnum::ERROR);
         self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::FAILED, $this->testDescription);
     }
 
@@ -196,13 +197,10 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     {
         $this->beforeTest($e);
         $trace = $e->getFail()->getTraceAsString();
-        $trace = $e->getFail()->getMessage();
-        $trace = $e->getFail()->getLine();
-        //$trace = $e->getTest()->getMetadata()->getName();
-        var_dump($trace);
-        //$response = self::$httpService->startChildItem($this->rootItemID, $this->testDescription, $this->testName, ItemTypesEnum::TEST, []);
-        //$this->testItemID = self::getID($response);
-        self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::SKIPPED, $this->testDescription);
+        $message = $e->getFail()->getMessage();
+        self::$httpService->addLogMessage($this->testItemID, $message, LogLevelsEnum::ERROR);
+        self::$httpService->addLogMessage($this->testItemID, $trace, LogLevelsEnum::ERROR);
+        self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::SKIPPED, $message);
         $this->setFailedLaunch();
     }
 
@@ -260,6 +258,7 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         }
         self::$httpService->finishItem($this->stepItemID, $status, $description);
         self::$httpService->setStepItemIDToEmpty();
+        $this->failedStepItemID = $this->stepItemID;
 
     }
 
@@ -313,7 +312,6 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         $array = json_decode($response->getBody(), true);
         return $array['id'];
     }
-
 }
 
 ?>

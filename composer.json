@@ -18,8 +18,8 @@
 
     "require-dev": {
 	    "reportportal/basic" : "dev-master",
-        "codeception/codeception": "^2.3",
-        "codeception/base": "^2.3"
+        "codeception/codeception": "2.3.6",
+        "codeception/base": "2.3.6"
     },
 
     "autoload-dev" : {
