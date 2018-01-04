@@ -7,7 +7,6 @@ use ReportPortalBasic\Enum\ItemTypesEnum as ItemTypesEnum;
 use ReportPortalBasic\Enum\LogLevelsEnum as LogLevelsEnum;
 use ReportPortalBasic\Service\ReportPortalHTTPService;
 use GuzzleHttp\Psr7\Response as Response;
-
 use \Codeception\Events as Events;
 use \Codeception\Event\SuiteEvent as SuiteEvent;
 use \Codeception\Event\TestEvent as TestEvent;
@@ -20,19 +19,18 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     const STRING_LIMIT = 20000;
     const COMMENT = '$this->getScenario()->comment($description);';
-
+    const PICTURE_CONTENT_TYPE = 'png';
+    const WEBDRIVER_MODULE_NAME = 'WebDriver';
+    const EXAMPLE_JSON_WORD = 'example';
+    const COMMENT_STEPS_DESCRIPTION = 'comment';
     private $isCommentStep = false;
     private $firstSuite = false;
-    private $UUID;
-    private $projectName;
-    private $host;
-    private $timeZone;
     private $launchName;
     private $launchDescription;
-    private $launchID;
     private $rootItemID;
     private $testItemID;
     private $stepItemID;
+    private $failedStepItemID;
     private $testName;
     private $testDescription;
     private $isFailedLaunch = false;
@@ -63,6 +61,9 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         Events::SUITE_AFTER => 'afterSuite'
     );
 
+    /**
+     * Configure http client.
+     */
     private function configureClient()
     {
         $UUID = $this->config['UUID'];
@@ -71,10 +72,8 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         $timeZone = $this->config['timeZone'];
         $this->launchName = $this->config['launchName'];
         $this->launchDescription = $this->config['launchDescription'];
-
         $isHTTPErrorsAllowed = false;
         $baseURI = sprintf(ReportPortalHTTPService::BASE_URI_TEMPLATE, $host);
-
         ReportPortalHTTPService::configureClient($UUID, $baseURI, $host, $timeZone, $projectName, $isHTTPErrorsAllowed);
         self::$httpService = new ReportPortalHTTPService();
     }
@@ -95,80 +94,129 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
 
     }
 
+    /**
+     * @param SuiteEvent $e
+     */
     public function afterSuite(SuiteEvent $e)
     {
         self::$httpService->finishRootItem();
     }
 
+    /**
+     * @param TestEvent $e
+     */
     public function beforeTestExecution(TestEvent $e)
     {
 
     }
 
+    /**
+     * @param TestEvent $e
+     */
     public function beforeTest(TestEvent $e)
     {
         $testName = $e->getTest()->getMetadata()->getName();
         $exampleParamsString = '';
-        try {
-            $exampleParams = $e->getTest()->getMetadata()->getCurrent()['example'];
+        $params = $e->getTest()->getMetadata()->getCurrent();
+        if (array_key_exists(self::EXAMPLE_JSON_WORD, $params)) {
+            $exampleParams = $e->getTest()->getMetadata()->getCurrent()[self::EXAMPLE_JSON_WORD];
             foreach ($exampleParams as $key => $value) {
-                $exampleParamsString = $exampleParamsString.$value.'; ';
+                $exampleParamsString = $exampleParamsString . $value . '; ';
             }
             if (!empty($exampleParamsString)) {
                 $exampleParamsString = substr($exampleParamsString, 0, -2);
-                $exampleParamsString = ' ('.$exampleParamsString.')';
+                $exampleParamsString = ' (' . $exampleParamsString . ')';
             }
-        } catch (Exception $exception) {
         }
-
-        $this->testName = $testName .$exampleParamsString;
+        $this->testName = $testName . $exampleParamsString;
         $this->testDescription = $exampleParamsString;
         $response = self::$httpService->startChildItem($this->rootItemID, $this->testDescription, $this->testName, ItemTypesEnum::TEST, []);
         $this->testItemID = self::getID($response);
     }
 
+    /**
+     * @param TestEvent $e
+     */
     public function afterTest(TestEvent $e)
     {
 
     }
 
+    /**
+     * @param TestEvent $e
+     */
     public function afterTestExecution(TestEvent $e)
     {
 
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterTestFail(FailEvent $e)
     {
         $this->setFailedLaunch();
 
+        //var_dump($e->getFail()->getTraceAsString());
+        //var_dump($e->getFail()->getMessage());
         self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::FAILED, $this->testDescription);
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterTestFailAdditional(FailEvent $e)
     {
         $this->setFailedLaunch();
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterTestError(FailEvent $e)
     {
+
+        self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::STOPPED, $this->testDescription);
         $this->setFailedLaunch();
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterTestIncomplete(FailEvent $e)
     {
+        self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::CANCELLED, $this->testDescription);
         $this->setFailedLaunch();
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterTestSkipped(FailEvent $e)
     {
+        $this->beforeTest($e);
+        $trace = $e->getFail()->getTraceAsString();
+        $trace = $e->getFail()->getMessage();
+        $trace = $e->getFail()->getLine();
+        //$trace = $e->getTest()->getMetadata()->getName();
+        var_dump($trace);
+        //$response = self::$httpService->startChildItem($this->rootItemID, $this->testDescription, $this->testName, ItemTypesEnum::TEST, []);
+        //$this->testItemID = self::getID($response);
+        self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::SKIPPED, $this->testDescription);
         $this->setFailedLaunch();
     }
 
+    /**
+     * @param TestEvent $e
+     */
     public function afterTestSuccess(TestEvent $e)
     {
         self::$httpService->finishItem($this->testItemID, ItemStatusesEnum::PASSED, $this->testDescription);
     }
 
+    /**
+     * @param StepEvent $e
+     */
     public function beforeStep(StepEvent $e)
     {
         $pairs = explode(':', $e->getStep()->getLine());
@@ -185,51 +233,58 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         }
         $response = self::$httpService->startChildItem($this->testItemID, '', $stepName, ItemTypesEnum::STEP, []);
         $this->stepItemID = self::getID($response);
+        self::$httpService->setStepItemID($this->stepItemID);
     }
 
+    /**
+     * @param StepEvent $e
+     */
     public function afterStep(StepEvent $e)
     {
-        $argumentsAsString = $e->getStep()->getArgumentsAsString();
-        $logDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $this->getLogDir());
-
         $stepToString = $e->getStep()->toString(self::STRING_LIMIT);
         $isFailedStep = $e->getStep()->hasFailed();
-
-
-        if ($isFailedStep) {
-            self::$httpService->addLogMessage($this->stepItemID, $stepToString, LogLevelsEnum::ERROR);
-            try {
-                $this->getModule('WebDriver')->_saveScreenshot(codecept_output_dir() . 'screenshot_1-123.png');
-                $screenshotBinary = $this->getModule('WebDriver')->webDriver->takeScreenshot();
-                //var_dump($screenshotBinary);
-                //self::$httpService->addLogMessage($this->stepItemID, '_'.$screenshotBinary.'_', LogLevelsEnum::ERROR);
-                //self::$httpService->addLogMessageWithPicture($this->stepItemID,$stepToString,LogLevelsEnum::ERROR,$screenshotBinary,'bmp');
-              } catch (ModuleRequireException $error) {
-            }
-            //self::$httpService->addLogMessageWithPicture($this->stepItemID,$stepToString,LogLevelsEnum::ERROR,,'bmp');
+        $module = null;
+        if ($this->hasModule(self::WEBDRIVER_MODULE_NAME)) {
+            $module = $this->getModule(self::WEBDRIVER_MODULE_NAME);
         }
-
-
+        if ($isFailedStep and $module !== null) {
+            $screenShot = $module->webDriver->takeScreenshot();
+            self::$httpService->addLogMessageWithPicture($this->stepItemID, $stepToString, LogLevelsEnum::ERROR,
+                $screenShot, self::PICTURE_CONTENT_TYPE);
+        }
         $status = self::getStatusByBool($isFailedStep);
         if ($this->isCommentStep) {
-            $description = 'comment';
+            $description = self::COMMENT_STEPS_DESCRIPTION;
         } else {
             $description = $e->getStep()->toString(self::STRING_LIMIT);
         }
         self::$httpService->finishItem($this->stepItemID, $status, $description);
+        self::$httpService->setStepItemIDToEmpty();
+
     }
 
+    /**
+     * @param FailEvent $e
+     */
     public function afterStepFail(FailEvent $e)
     {
 
     }
 
+    /**
+     * @param PrintResultEvent $e
+     */
     public function afterTesting(PrintResultEvent $e)
     {
         $status = self::getStatusByBool($this->isFailedLaunch);
         self::$httpService->finishTestRun($status);
     }
 
+    /**
+     * Get status for HTTP request from boolean variable
+     * @param bool $isFailed
+     * @return string
+     */
     private static function getStatusByBool(bool $isFailed)
     {
         if ($isFailed) {
@@ -240,12 +295,16 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         return $status;
     }
 
+    /**
+     *Set isFailedLaunch to true
+     */
     private function setFailedLaunch()
     {
         $this->isFailedLaunch = true;
     }
 
     /**
+     * Get ID from response
      * @param Response $response
      * @return string
      */
