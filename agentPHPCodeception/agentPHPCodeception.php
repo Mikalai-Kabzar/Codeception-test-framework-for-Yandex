@@ -1,7 +1,5 @@
 <?php
 
-
-use Codeception\Exception\ModuleRequireException as ModuleRequireException;
 use ReportPortalBasic\Enum\ItemStatusesEnum as ItemStatusesEnum;
 use ReportPortalBasic\Enum\ItemTypesEnum as ItemTypesEnum;
 use ReportPortalBasic\Enum\LogLevelsEnum as LogLevelsEnum;
@@ -256,10 +254,14 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
         } else {
             $description = $e->getStep()->toString(self::STRING_LIMIT);
         }
+
+        $html = $e->getStep()->getPhpCode(2000000);
+        var_dump($html);
+        //$this->getLogDir()
+
         self::$httpService->finishItem($this->stepItemID, $status, $description);
         self::$httpService->setStepItemIDToEmpty();
         $this->failedStepItemID = $this->stepItemID;
-
     }
 
     /**
@@ -300,6 +302,16 @@ class agentPHPCodeception extends \Codeception\Platform\Extension
     private function setFailedLaunch()
     {
         $this->isFailedLaunch = true;
+    }
+
+    private static function getReportHTMLFileName(StepEvent $e)
+    {
+        $line = $e->getStep()->getLine();
+        $fullFilename = explode(DIRECTORY_SEPARATOR, $line);
+        $fullFilename = $fullFilename[count($fullFilename) - 1];
+        $filename = explode('.', $fullFilename)[0];
+        $testName = $e->getTest()->getMetadata()->getName();
+        return $filename . '.' . $testName;
     }
 
     /**
