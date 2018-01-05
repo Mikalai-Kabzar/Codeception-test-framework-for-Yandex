@@ -1,0 +1,18 @@
+Failed asserting that  on page /
+--> Сделать стартовой
+Минск
+Rus
+Настройка
+Почта
+Завести почту
+Авторизация
+?
+Чужой компьютер
+Войти
+Новогодние стикеры
+Сейчас в СМИ
+в мире
+5 января, пятница 1614
+«Коммуналка
+[Content too long to display. See complete response in 'E:\REPOS\Codeception-test-framework-for-Yandex\tests/_output\' directory]
+--> contains "картинки22".
