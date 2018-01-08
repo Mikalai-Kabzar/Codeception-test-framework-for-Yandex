@@ -8,5 +8,4 @@
 actor: FunctionalTester
 modules:
     enabled:
-        # add a framework module here
         - \Helper\Functional

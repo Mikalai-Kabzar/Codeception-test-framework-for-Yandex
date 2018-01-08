@@ -1,9 +1,5 @@
 <?php
 
-/**
- *
- * @SuppressWarnings(PHPMD)
- */
 
 class YandexTester extends \Codeception\Actor
 {

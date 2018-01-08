@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Mikalai_Kabzar
- * Date: 12/27/2017
- * Time: 3:42 PM
- */
 
 namespace Pages;
 
